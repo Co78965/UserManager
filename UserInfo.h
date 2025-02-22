@@ -7,9 +7,13 @@
 #include <sddl.h>
 #include <iostream>
 #include <ntsecapi.h>
+#include <vector>
 
 #pragma comment(lib, "advapi32.lib")
 #pragma comment(lib, "netapi32.lib")
+
+#define USER  (0)
+#define GROUP (1)
 
 class UsersInfo {
     private:
@@ -17,6 +21,8 @@ class UsersInfo {
         DWORD entriesReadGroups;
         LPUSER_INFO_0 pBufUsers;
         LPLOCALGROUP_INFO_0 pBufGroups;
+    
+        USER_INFO_1 parseData(const std::vector<std::wstring>& userData, int FLAG = USER);
     
     public:
         UsersInfo() : entriesReadUsers(0), entriesReadGroups(0), pBufUsers(NULL), pBufGroups(NULL) {}
@@ -36,10 +42,10 @@ class UsersInfo {
         void PrintGroupInfo();
         void PrintAccountRights(LSA_HANDLE,PSID);
     
-        //bool AddUser(); //NetUserAdd
+        bool AddUser(const std::vector<std::wstring>& userData);
         //bool AddGroup(); //NetGroupAdd
     
-        //bool DelUser(); //NetUserDel
+        bool DeleteUser(const std::wstring& username);
         //bool DelGroup(); //NetGroupDel
     
         //bool UserChange(); //NetUserSetInfo 

@@ -3,6 +3,75 @@
 #include <winnt.h>
 #include <windows.h>
 
+bool UsersInfo::DeleteUser(const std::wstring& username) {
+    NET_API_STATUS nStatus = NetUserDel(NULL, username.c_str());
+
+    if (nStatus != NERR_Success) {
+        std::cerr << "[ERROR] NetUserDel failed! Error code: 0x" << std::hex << nStatus << std::endl;
+        return false;
+    }
+
+    std::cout << "[INFO] User " << username.c_str() << " deleted successfully!" << std::endl;
+    return true;
+}
+
+USER_INFO_1 UsersInfo::parseData(const std::vector<std::wstring>& userData, int FLAG) {
+    USER_INFO_1 ui = {0};
+
+    if (userData.size() < 3) {
+        std::cerr << "[ERROR] Not enough parameters in userData\n";
+        return USER_INFO_1{};
+    }
+
+    // Динамическое выделение памяти
+    ui.usri1_name = _wcsdup(userData[0].c_str());
+    ui.usri1_password = _wcsdup(userData[1].c_str());
+
+    if (userData[2] == L"guest") {
+        ui.usri1_priv = USER_PRIV_GUEST;
+    } else if (userData[2] == L"user") {
+        ui.usri1_priv = USER_PRIV_USER;
+    } else if (userData[2] == L"admin") {
+        ui.usri1_priv = USER_PRIV_ADMIN;
+    } else {
+        std::cerr << "[ERROR] Incorrect user privilege\n";
+        free(ui.usri1_name);
+        free(ui.usri1_password);
+        return USER_INFO_1{};
+    }
+
+    ui.usri1_home_dir = NULL;
+    ui.usri1_comment = NULL;
+    ui.usri1_flags = UF_SCRIPT;
+    ui.usri1_script_path = NULL;
+
+    return ui;
+}
+
+bool UsersInfo::AddUser(const std::vector<std::wstring>& userData) {
+    DWORD dwLevel = 1;
+    DWORD dwError = 0;
+
+    USER_INFO_1 ui = parseData(userData);
+    if (!ui.usri1_name || !ui.usri1_password) {
+        return false;
+    }
+
+    NET_API_STATUS nStatus = NetUserAdd(NULL, dwLevel, (LPBYTE)&ui, &dwError);
+
+    // Освобождаем память
+    free(ui.usri1_name);
+    free(ui.usri1_password);
+
+    if (nStatus != NERR_Success) {
+        std::cerr << "[ERROR] NetUserAdd failed! Error code: 0x" << std::hex << nStatus << std::endl;
+        return false;
+    }
+
+    std::cout << "[INFO] NetUserAdd() is OK!" << std::endl;
+    return true;
+}
+
 void UsersInfo::PrintAccountRights(LSA_HANDLE policyHandle, PSID accountSid) {
     PLSA_UNICODE_STRING rights = NULL;
     ULONG rightsCount = 0;
