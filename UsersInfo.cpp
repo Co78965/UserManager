@@ -23,25 +23,43 @@ USER_INFO_1 UsersInfo::parseData(const std::vector<std::wstring>& data) {
     ui.usri1_name = _wcsdup(data[0].c_str());
     ui.usri1_password = _wcsdup(data[1].c_str());
 
-    if (data[2] == L"guest") {
-        ui.usri1_priv = USER_PRIV_GUEST;
-    } else if (data[2] == L"user") {
-        ui.usri1_priv = USER_PRIV_USER;
-    } else if (data[2] == L"admin") {
-        ui.usri1_priv = USER_PRIV_ADMIN;
-    } else {
-        std::cerr << "[ERROR] Incorrect user privilege\n";
-        free(ui.usri1_name);
-        free(ui.usri1_password);
-        return USER_INFO_1{};
-    }
-
+    // if (data[2] == L"guest") {
+    //     ui.usri1_priv = USER_PRIV_GUEST;
+    // } else if (data[2] == L"user") {
+    //     ui.usri1_priv = USER_PRIV_USER;
+    // } else if (data[2] == L"admin") {
+    //     ui.usri1_priv = USER_PRIV_ADMIN;
+    // } else {
+    //     std::cerr << "[ERROR] Incorrect user privilege\n";
+    //     free(ui.usri1_name);
+    //     free(ui.usri1_password);
+    //     return USER_INFO_1{};
+    // }
+    ui.usri1_priv = USER_PRIV_USER;
     ui.usri1_home_dir = NULL;
     ui.usri1_comment = NULL;
     ui.usri1_flags = UF_SCRIPT;
     ui.usri1_script_path = NULL;
 
     return ui;
+}
+
+void UsersInfo::printAccountRights(LSA_HANDLE policyHandle, PSID accountSid) {
+    PLSA_UNICODE_STRING rights = NULL;
+    ULONG rightsCount = 0;
+    
+    NTSTATUS status = LsaEnumerateAccountRights(policyHandle, accountSid, &rights, &rightsCount);
+    if (status != 0) {
+        wprintf(L"[ERROR] Failed to retrieve privileges (code: %x)\n", status);
+        return;
+    }
+
+    wprintf(L"\tPrivileges:\n");
+    for (ULONG i = 0; i < rightsCount; i++) {
+        wprintf(L"\t\t%s (Enabled)\n", rights[i].Buffer);
+    }
+
+    LsaFreeMemory(rights);
 }
 
 bool UsersInfo::AddUser(const std::vector<std::wstring>& userData) {
@@ -66,24 +84,6 @@ bool UsersInfo::AddUser(const std::vector<std::wstring>& userData) {
 
     std::cout << "[INFO] NetUserAdd() is OK!" << std::endl;
     return true;
-}
-
-void UsersInfo::printAccountRights(LSA_HANDLE policyHandle, PSID accountSid) {
-    PLSA_UNICODE_STRING rights = NULL;
-    ULONG rightsCount = 0;
-    
-    NTSTATUS status = LsaEnumerateAccountRights(policyHandle, accountSid, &rights, &rightsCount);
-    if (status != 0) {
-        wprintf(L"[ERROR] Failed to retrieve privileges (code: %x)\n", status);
-        return;
-    }
-
-    wprintf(L"\tPrivileges:\n");
-    for (ULONG i = 0; i < rightsCount; i++) {
-        wprintf(L"\t\t%s (Enabled)\n", rights[i].Buffer);
-    }
-
-    LsaFreeMemory(rights);
 }
 
 bool UsersInfo::GetUsers() {
@@ -133,4 +133,40 @@ void UsersInfo::PrintUserInfo() {
     }
 
     LsaClose(policyHandle);
+}
+
+bool UsersInfo::AddUserToGroup(const std::wstring& userName, const std::wstring& groupName) {
+    LOCALGROUP_MEMBERS_INFO_3 memberInfo;
+    memberInfo.lgrmi3_domainandname = const_cast<LPWSTR>(userName.c_str());
+
+    NET_API_STATUS status = NetLocalGroupAddMembers(NULL, groupName.c_str(), 3, (LPBYTE)&memberInfo, 1);
+    
+    if (status == NERR_Success) {
+        wprintf(L"User %s has been added to the group %s\n", userName.c_str(), groupName.c_str());
+        return true;
+    } else if (status == ERROR_MEMBER_IN_ALIAS) {
+        wprintf(L"User %s is already a member of the group %s\n", userName.c_str(), groupName.c_str());
+    } else {
+        wprintf(L"Error adding user %s to the group %s (error code: %d)\n", userName.c_str(), groupName.c_str(), status);
+    }
+    
+    return false;
+}
+
+bool UsersInfo::DelUserToGroup(const std::wstring& userName, const std::wstring& groupName) {
+    LOCALGROUP_MEMBERS_INFO_3 memberInfo;
+    memberInfo.lgrmi3_domainandname = const_cast<LPWSTR>(userName.c_str());
+
+    NET_API_STATUS status = NetLocalGroupDelMembers(NULL, groupName.c_str(), 3, (LPBYTE)&memberInfo, 1);
+
+    if (status == NERR_Success) {
+        wprintf(L"User %s has been deleted to the group %s\n", userName.c_str(), groupName.c_str());
+        return true;
+    } else if (status == ERROR_MEMBER_IN_ALIAS) {
+        wprintf(L"User %s is already deleted from the group %s\n", userName.c_str(), groupName.c_str());
+    } else {
+        wprintf(L"Error deleted user %s to the group %s (error code: %d)\n", userName.c_str(), groupName.c_str(), status);
+    }
+    
+    return false;
 }

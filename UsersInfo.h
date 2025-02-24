@@ -35,13 +35,13 @@ class UsersInfo {
         }
     
         bool GetUsers();
-        bool GetGroups();
         void PrintUserInfo();
-        void PrintGroupInfo();
-    
+
         bool AddUser(const std::vector<std::wstring>& userData);
         bool DeleteUser(const std::wstring& userName);
-        //bool DelGroup(); //NetGroupDel
+        
+        bool AddUserToGroup(const std::wstring& userName, const std::wstring& groupName);
+        bool DelUserToGroup(const std::wstring& userName, const std::wstring& groupName);
     
         //bool UserChange(); //NetUserSetInfo 
     

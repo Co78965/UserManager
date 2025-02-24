@@ -180,4 +180,6 @@ bool GroupsInfo::ModifyGroup(const std::wstring& oldGroupName, const std::wstrin
             return false;
         }
     }
+    return true;
 }
+
