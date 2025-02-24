@@ -48,6 +48,7 @@ void TestGroupOperations() {
 }
 
 int main() {
+
     _setmode(_fileno(stdout), _O_U8TEXT);
     TestGroupOperations();
     return 0;
