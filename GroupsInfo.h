@@ -19,6 +19,8 @@ class GroupsInfo{
 
         GROUP_INFO_1 parseData(const std::vector<std::wstring>& data);
         void printAccountRights(LSA_HANDLE, PSID);
+        LPWSTR convertSID(BYTE* sidBuffer);
+        int setInfo(const std::wstring& oldGroupName, LPBYTE groupInfo, int level);
     public:
         GroupsInfo() : entriesReadGroups(0), pBufGroups(NULL) {}
         
@@ -33,6 +35,8 @@ class GroupsInfo{
 
         bool AddGroup(const std::vector<std::wstring>& groupData);
         bool DeleteGroup(const std::wstring& groupName);
+
+        bool ModifyGroup(const std::wstring& oldGroupName, const std::wstring& newGroupName = L"", const std::wstring& newGroupComment = L"");
 };
 
 #endif

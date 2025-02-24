@@ -37,6 +37,28 @@ void GroupsInfo::printAccountRights(LSA_HANDLE policyHandle, PSID accountSid) {
     LsaFreeMemory(rights);
 }
 
+LPWSTR GroupsInfo::convertSID(BYTE* sidBuffer){
+    LPWSTR sidString = NULL;
+    if (ConvertSidToStringSidW((PSID)sidBuffer, &sidString)) {
+        return sidString;
+    } else {
+        std::wcerr << L"[ERROR] Ошибка при конвертации SID. Код ошибки: " << GetLastError() << L"\n";
+        return L"NULL";
+    }
+}
+
+int GroupsInfo::setInfo(const std::wstring& oldGroupName, LPBYTE groupInfo, int level){
+    NET_API_STATUS status = NetLocalGroupSetInfo(NULL, oldGroupName.c_str(), level, groupInfo, NULL);
+    
+    if (status == NERR_Success) {
+        // std::wcout << L"[SUCCESS] Change group name '" << oldGroupName << L"' to group name '" << newGroupName << L"'.\n";
+        return 0;
+    } else {
+        // std::wcerr << L"[ERROR] NetLocalGroupSetInfo | level 0 | code error: " << status << L"\n";
+        return status;
+    }
+}
+
 bool GroupsInfo::GetGroups() {
     DWORD totalEntries = 0;
     if (NetLocalGroupEnum(NULL, 0, (LPBYTE*)&pBufGroups, MAX_PREFERRED_LENGTH, &entriesReadGroups, &totalEntries, NULL) != NERR_Success) {
@@ -78,6 +100,7 @@ void GroupsInfo::PrintGroupsInfo() {
             SID_NAME_USE sidType;
 
             if (LookupAccountNameW(NULL, pBuf1->lgrpi1_name, sidBuffer, &sidSize, domainName, &domainSize, &sidType)) {
+                wprintf(L"SID: %s\n", convertSID(sidBuffer));
                 printAccountRights(policyHandle, (PSID)sidBuffer);
             } else {
                 wprintf(L"[ERROR] Failed to retrieve SID for group %s (error: %d)\n", pBuf1->lgrpi1_name, GetLastError());
@@ -129,4 +152,32 @@ bool GroupsInfo::DeleteGroup(const std::wstring& groupName) {
 
     std::wcout << L"[INFO] Group '" << groupName << L"' deleted successfully.\n";
     return true;
+}
+
+bool GroupsInfo::ModifyGroup(const std::wstring& oldGroupName, const std::wstring& newGroupName, const std::wstring& newGroupComment){
+    if(!newGroupName.empty()){
+        LOCALGROUP_INFO_0 groupInfo0;
+        groupInfo0.lgrpi0_name = const_cast<LPWSTR>(newGroupName.c_str()); // Новое имя группы
+        int status = setInfo(oldGroupName, (LPBYTE)&groupInfo0, 0);
+        if(status == 0){
+            std::wcout << L"[SUCCESS] Change group name '" << oldGroupName << L"' to group name '" << newGroupName << L"'.\n";
+        }
+        else{
+            std::wcerr << L"[ERROR] NetLocalGroupSetInfo | level 0 | code error: " << status << L"\n";
+        }
+    }
+
+    if(!newGroupComment.empty()){
+        LOCALGROUP_INFO_1 groupInfo1;
+        groupInfo1.lgrpi1_comment = const_cast<LPWSTR>(newGroupComment.c_str()); // Новый комментарий
+        int status = setInfo(oldGroupName, (LPBYTE)&groupInfo1, 1);
+        if(status == 0){
+            std::wcout << L"[SUCCESS] Change comment end!\n";
+            return true;
+        }
+        else{
+            std::wcerr << L"[ERROR] NetLocalGroupSetInfo | level 1 | code error: " << status << L"\n";
+            return false;
+        }
+    }
 }
