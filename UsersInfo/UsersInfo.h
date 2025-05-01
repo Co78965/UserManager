@@ -9,6 +9,7 @@
 #include <ntsecapi.h>
 #include <vector>
 #include <winnt.h>
+#include <string>
 #include "../interface/IGroupsInfo.h"
 
 #pragma comment(lib, "advapi32.lib")
@@ -25,55 +26,9 @@ class UsersInfo {
         LPLOCALGROUP_INFO_0 pBufGroups;
     
         USER_INFO_1 parseData(const std::vector<std::wstring>& data);
-        void printAccountRights(LSA_HANDLE,PSID);
         void debug(std::wstring text, int type);
-        const std::vector<LPCWSTR> privileges = {
-            L"SeAssignPrimaryTokenPrivilege",
-            L"SeAuditPrivilege",
-            L"SeBackupPrivilege",
-            L"SeBatchLogonRight",
-            L"SeChangeNotifyPrivilege",
-            L"SeCreateGlobalPrivilege",
-            L"SeCreatePagefilePrivilege",
-            L"SeCreatePermanentPrivilege",
-            L"SeCreateSymbolicLinkPrivilege",
-            L"SeCreateTokenPrivilege",
-            L"SeDebugPrivilege",
-            L"SeDelegateSessionUserImpersonatePrivilege",
-            L"SeDenyBatchLogonRight",
-            L"SeDenyInteractiveLogonRight",
-            L"SeDenyNetworkLogonRight",
-            L"SeDenyRemoteInteractiveLogonRight",
-            L"SeDenyServiceLogonRight",
-            L"SeEnableDelegationPrivilege",
-            L"SeImpersonatePrivilege",
-            L"SeIncreaseBasePriorityPrivilege",
-            L"SeIncreaseQuotaPrivilege",
-            L"SeIncreaseWorkingSetPrivilege",
-            L"SeInteractiveLogonRight",
-            L"SeLoadDriverPrivilege",
-            L"SeLockMemoryPrivilege",
-            L"SeMachineAccountPrivilege",
-            L"SeManageVolumePrivilege",
-            L"SeNetworkLogonRight",
-            L"SeProfileSingleProcessPrivilege",
-            L"SeRelabelPrivilege",
-            L"SeRemoteInteractiveLogonRight",
-            L"SeRemoteShutdownPrivilege",
-            L"SeRestorePrivilege",
-            L"SeSecurityPrivilege",
-            L"SeServiceLogonRight",
-            L"SeShutdownPrivilege",
-            L"SeSyncAgentPrivilege",
-            L"SeSystemEnvironmentPrivilege",
-            L"SeSystemProfilePrivilege",
-            L"SeSystemtimePrivilege",
-            L"SeTakeOwnershipPrivilege",
-            L"SeTcbPrivilege",
-            L"SeTimeZonePrivilege",
-            L"SeTrustedCredManAccessPrivilege",
-            L"SeUndockPrivilege"
-          };
+        LSA_HANDLE getPolicy();
+        PSID getPSID(std::wstring username);
     public:
         UsersInfo(IGroupsInfo* groups, int debug) : usersDebug(debug), groups(groups), entriesReadUsers(0), pBufUsers(NULL), pBufGroups(NULL) {}
     
@@ -98,6 +53,8 @@ class UsersInfo {
         
         bool AddUserPrivilege(const std::wstring& username, const std::wstring& privilege);
         bool RemoveUserPrivilege(const std::wstring& username, const std::wstring& privilege);
+        void PrintAccountRights(std::wstring name);
+        void DebugOnOff();
     };
 
 #endif

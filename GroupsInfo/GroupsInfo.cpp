@@ -41,7 +41,7 @@ LSA_HANDLE GroupsInfo::getPolicy(){
     LSA_OBJECT_ATTRIBUTES objectAttributes = { 0 };
     objectAttributes.Length = sizeof(objectAttributes);
 
-    NTSTATUS status = LsaOpenPolicy(NULL, &objectAttributes, POLICY_LOOKUP_NAMES, &policyHandle);
+    NTSTATUS status = LsaOpenPolicy(NULL, &objectAttributes, POLICY_ALL_ACCESS, &policyHandle);
     if (status != 0) {
         debug(L"Failed to open security policy. NTSTATUS: " + std::to_wstring(status), ERROR);
         return NULL;
@@ -65,7 +65,7 @@ void GroupsInfo::PrintAccountRights(std::wstring name, std::wstring text) {
     }
 
     if (status != 0) {
-        wprintf(L"%sThe group has no privileges!", s);
+        wprintf(L"%sThe group has no privileges!\n", s);
         return;
     }
 
@@ -109,7 +109,7 @@ bool GroupsInfo::GetGroups() {
 }
 
 void GroupsInfo::PrintGroupInfo(std::wstring name){
-    wprintf(L"\n----------------------------------------%s's info----------------------------------------\n", name.c_str());   
+    wprintf(L"----------------------------------------%s's info----------------------------------------\n", name.c_str());   
     LPLOCALGROUP_INFO_1 pBuf1 = NULL;
     LPBYTE pBufDetail = NULL;
     NET_API_STATUS nStatus = NetLocalGroupGetInfo(NULL, name.c_str(), 1, &pBufDetail);
@@ -134,9 +134,10 @@ void GroupsInfo::PrintGroupInfo(std::wstring name){
 
         NetApiBufferFree(pBufDetail);
     } else {
+        wprintf(L"Group %s doesn't excist!\n", name.c_str());
         debug(L"Failed to retrieve group information for " + name + L". Error code: " + std::to_wstring(nStatus), ERROR);
     }
-    wprintf(L"\n------------------------------------------------------------------------------------------\n");
+    wprintf(L"------------------------------------------------------------------------------------------\n");
 }
 
 void GroupsInfo::PrintGroupsInfo() {
@@ -150,7 +151,7 @@ void GroupsInfo::PrintGroupsInfo() {
         return;
     }
 
-    wprintf(L"\n----------------------------------------Groups info----------------------------------------\n");
+    wprintf(L"----------------------------------------Groups info----------------------------------------\n");
     for (DWORD i = 0; i < entriesReadGroups; i++) {
         PrintGroupInfo(pBufGroups[i].lgrpi0_name);
     }
@@ -276,18 +277,29 @@ bool GroupsInfo::RemoveGroupPrivilege(const std::wstring& groupName, const std::
     return status == 0;
 }
 
+void GroupsInfo::DebugOnOff(){
+    debug(L"disabling debug", INFO);
+    groupDebug = !groupDebug;
+    debug(L"enabling debug", INFO);;
+}
+
 void GroupsInfo::debug(std::wstring text, int type){
     if(!groupDebug){
         return;
     }
     std::wstring line = L"";
+    WORD color = 0;
     switch(type){
         case ERROR:
         line = L"[ERROR]";
+        color = 12;
         break;
         case INFO:
+        color = 8;
         line = L"[INFO]";
         break;
     }
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
     wprintf(L"%s %s\n", line.c_str(), text.c_str());
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
 }

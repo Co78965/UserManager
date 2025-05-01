@@ -38,16 +38,18 @@ class GroupsInfo : public IGroupsInfo{
             }
         }
 
-        bool GetGroups();
-        void PrintGroupsInfo();
-        void PrintGroupInfo(std::wstring name);
+        bool GetGroups(); //+
+        void PrintGroupsInfo(); //+
+        void PrintGroupInfo(std::wstring name); //+
 
-        bool AddGroup(const std::vector<std::wstring>& groupData);
-        bool DeleteGroup(const std::wstring& groupName);
+        bool AddGroup(const std::vector<std::wstring>& groupData); //+
+        bool DeleteGroup(const std::wstring& groupName); //+
 
         bool ModifyGroup(const std::wstring& oldGroupName, const std::wstring& newGroupName = L"", const std::wstring& newGroupComment = L"");
         bool AddGroupPrivilege(const std::wstring& groupName, const std::wstring& privilegeName);
         bool RemoveGroupPrivilege(const std::wstring& groupName, const std::wstring& privilege);
+
+        void DebugOnOff();
     };
 
 #endif
