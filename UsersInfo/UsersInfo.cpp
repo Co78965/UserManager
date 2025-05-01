@@ -95,15 +95,14 @@ bool UsersInfo::AddUser(const std::vector<std::wstring>& userData) {
 
     NET_API_STATUS nStatus = NetUserAdd(NULL, dwLevel, (LPBYTE)&ui, &dwError);
 
-    free(ui.usri1_name);
-    free(ui.usri1_password);
-
     if (nStatus != NERR_Success) {
         debug(L"NetUserAdd failed. Error code: 0x" + std::to_wstring(nStatus), ERROR);
         return false;
     }
 
-    debug(L"User added successfully", INFO);
+    debug(L"User" + userData[0] + L" added successfully", INFO);
+    free(ui.usri1_name);
+    free(ui.usri1_password);
     return true;
 }
 

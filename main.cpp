@@ -58,7 +58,7 @@ const std::vector<LPCWSTR> privileges = {
     L"SeUndockPrivilege"
   };
 
-  void ShowUserMenu(UsersInfo u) {
+  void ShowUserMenu(UsersInfo& u) {
     int choice;
     do {
         std::wstring name; 
@@ -162,7 +162,7 @@ const std::vector<LPCWSTR> privileges = {
 }
 
 
-void ShowGroupMenu(GroupsInfo g) {
+void ShowGroupMenu(GroupsInfo& g) {
     int choice;
     do {
         std::wstring name; 
@@ -245,6 +245,65 @@ void ShowGroupMenu(GroupsInfo g) {
     } while (choice != 0);
 }
 
+void ShowLab(){
+    int debug = 1;
+    GroupsInfo groups(debug);
+    UsersInfo users(&groups, debug);
+
+    if (!(groups.GetGroups() && users.GetUsers())){
+        wprintf(L"[ERROR] groups.GetGroups() && users.GetUsers()\n");
+        return;
+    }
+    //step 1
+    std::wcout<< L"=== STEP 1 ===" << std::endl;
+    groups.PrintGroupsInfo();
+    std::cin.ignore();
+    std::wcout << L"Enter key...";
+    getchar();
+    system("cls");
+
+    users.PrintUsersInfo();
+    std::cin.ignore();
+    std::wcout << L"Enter key...";
+    getchar();
+    system("cls");
+    //step 2
+    std::wcout<< L"=== STEP 2 ===" << std::endl;
+    groups.AddGroup({L"NewTestGroup", L"new test group"});
+    groups.PrintGroupInfo(L"NewTestGroup");
+    groups.AddGroupPrivilege(L"NewTestGroup",  L"SeAuditPrivilege");
+    groups.AddGroupPrivilege(L"NewTestGroup",  L"SeEnableDelegationPrivilege");
+    groups.PrintGroupInfo(L"NewTestGroup");
+    
+    users.AddUser({L"vanya", L"1", L""});
+    users.PrintUserInfo(L"vanya");
+    users.AddUserPrivilege(L"vanya",L"SeBackupPrivilege");
+    users.AddUserPrivilege(L"vanya",L"SeCreatePagefilePrivilege");
+    users.PrintUserInfo(L"vanya");
+
+    users.AddUserToGroup(L"vanya", L"NewTestGroup");
+    users.PrintUserInfo(L"vanya");
+
+    std::cin.ignore();
+    std::wcout << L"Enter key...";
+    getchar();
+    system("cls");
+
+    //step 3
+    std::wcout<< L"=== STEP 3 ===" << std::endl;
+    users.RemoveUserPrivilege(L"vanya",L"SeBackupPrivilege");
+    users.RemoveUserPrivilege(L"vanya",L"SeCreatePagefilePrivilege");
+    users.PrintUserInfo(L"vanya");
+    
+    users.DeleteUser(L"vanya");
+    groups.DeleteGroup(L"NewTestGroup");
+
+    users.PrintUserInfo(L"vanya");
+    groups.PrintGroupInfo(L"NewTestGroup");
+
+    system("cls");
+}
+
 int main() {
     _setmode(_fileno(stdout), _O_U8TEXT);
     int debug = 0;
@@ -263,6 +322,7 @@ int main() {
         std::wcout << L"\n=== MAIN MENU ===\n";
         std::wcout << L"1. Actions with users\n";
         std::wcout << L"2. Actions with groups\n";
+        std::wcout << L"3. Demonstration of the program\n"; 
         std::wcout << L"0. Exit\n";
         std::wcout << L"Select a section:";
         std::cin >> mainChoice;
@@ -270,38 +330,11 @@ int main() {
         switch (mainChoice) {
             case 1: ShowUserMenu(u); break;
             case 2: ShowGroupMenu(g); break;
-            case 0: std::wcout << L"Exit...\n"; break;
+            case 3: ShowLab(); break;
+            case 0: break;
             default: std::wcout << L"Wrong choice. Repeat it.\n";
         }
     } while (mainChoice != 0);
 
     return 0;
 }
-
-    // GroupsInfo groups(debug);
-    // UsersInfo users(&groups, debug);
-
-    // if (!(groups.GetGroups() && users.GetUsers())){
-    //     wprintf(L"[ERROR] groups.GetGroups() && users.GetUsers()\n");
-    //     return -1;
-    // }
-
-    // // users.PrintUserInfo(L"lyuga");
-    // groups.AddGroup({L"NewTestGroup", L"new test group"});
-    // users.AddUser({L"vanya", L"1", L""});
-    // users.AddUserPrivilege(L"vanya",L"SeBackupPrivilege");
-    // users.AddUserPrivilege(L"vanya",L"SeCreatePagefilePrivilege");
-    // users.PrintUserInfo(L"vanya");
-
-    // groups.AddGroupPrivilege(L"NewTestGroup",  L"SeAuditPrivilege");
-    // groups.AddGroupPrivilege(L"NewTestGroup",  L"SeEnableDelegationPrivilege");
-    // groups.PrintGroupInfo(L"NewTestGroup");
-
-    // users.AddUserToGroup(L"vanya", L"NewTestGroup");
-    // users.PrintUserInfo(L"vanya");
-
-    // users.DeleteUser(L"vanya");
-    // groups.DeleteGroup(L"NewTestGroup");
-
-    // users.PrintUserInfo(L"vanya");
-    // groups.PrintGroupInfo(L"NewTestGroup");
